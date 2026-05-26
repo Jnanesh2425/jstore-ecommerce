@@ -1,26 +1,28 @@
 const cron = require('node-cron');
 const orderModel = require('../models/orderModel');
 const { sendOrderDeliveredEmail } = require('./sendEmail');
-// import { FiClock } from "react-icons/fi";
 
-// CRON JOB 1: Run @ 10:00 AM - Check for shipped & delivered orders
-const cronJob10AM = cron.schedule('0 10 * * *', async () => {
+// Helper function to get date range (start and end of day)
+const getDateRange = (date = new Date()) => {
+  const start = new Date(date);
+  start.setHours(0, 0, 0, 0);
+  const end = new Date(start);
+  end.setDate(end.getDate() + 1);
+  return { start, end };
+};
+
+// Helper function to process order status updates
+const processOrderStatusUpdates = async () => {
   try {
-    console.log('[10:00 AM] Cron job running - Checking shipped & delivered orders...');
-    
-    const today = new Date();
-    today.setHours(0, 0, 0, 0); // Start of day
-    const tomorrowStart = new Date(today);
-    tomorrowStart.setDate(tomorrowStart.getDate() + 1); // End of day
+    const { start, end } = getDateRange();
+    let updateCount = 0;
 
-    // ─────────────────────────────────────
     // CHECK 1: Update "confirmed" to "shipped" if shippedDate matches
-    // ─────────────────────────────────────
     const confirmedOrders = await orderModel.find({
       status: 'confirmed',
       shippedDate: {
-        $gte: today,
-        $lt: tomorrowStart
+        $gte: start,
+        $lt: end
       }
     }).populate('userId');
 
@@ -28,16 +30,31 @@ const cronJob10AM = cron.schedule('0 10 * * *', async () => {
       order.status = 'shipped';
       await order.save();
       console.log(`✅ Order ${order._id} updated to: SHIPPED`);
+      updateCount++;
     }
 
-    // ─────────────────────────────────────
-    // CHECK 2: Update "out for delivery" to "delivered" if deliveredDate matches
-    // ─────────────────────────────────────
+    // CHECK 2: Update "shipped" to "out for delivery" if outForDeliveryDate matches
+    const shippedOrders = await orderModel.find({
+      status: 'shipped',
+      outForDeliveryDate: {
+        $gte: start,
+        $lt: end
+      }
+    }).populate('userId');
+
+    for (const order of shippedOrders) {
+      order.status = 'out for delivery';
+      await order.save();
+      console.log(`✅ Order ${order._id} updated to: OUT FOR DELIVERY`);
+      updateCount++;
+    }
+
+    // CHECK 3: Update "out for delivery" to "delivered" if deliveredDate matches
     const outForDeliveryOrders = await orderModel.find({
       status: 'out for delivery',
       deliveredDate: {
-        $gte: today,
-        $lt: tomorrowStart
+        $gte: start,
+        $lt: end
       }
     }).populate('userId');
 
@@ -45,6 +62,7 @@ const cronJob10AM = cron.schedule('0 10 * * *', async () => {
       order.status = 'delivered';
       await order.save();
       console.log(`✅ Order ${order._id} updated to: DELIVERED`);
+      updateCount++;
 
       // Send delivery email
       if (order.userId?.email) {
@@ -57,53 +75,32 @@ const cronJob10AM = cron.schedule('0 10 * * *', async () => {
       }
     }
 
-    console.log('✅ Cron job @ 10:00 AM completed!');
-  } catch (error) {
-    console.error('❌ Error in cron job @ 10 AM:', error);
-  }
-});
-
-// ─────────────────────────────────────────────────────
-// CRON JOB 2: Run @ 7:00 AM - Check for "out for delivery" orders
-// ─────────────────────────────────────────────────────
-const cronJob7AM = cron.schedule('0 7 * * *', async () => {
-  try {
-    console.log('[07:00 AM] Cron job running - Checking out for delivery orders...');
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0); // Start of day
-    const tomorrowStart = new Date(today);
-    tomorrowStart.setDate(tomorrowStart.getDate() + 1); // End of day
-
-    // Check if outForDeliveryDate matches today
-    const shippedOrders = await orderModel.find({
-      status: 'shipped',
-      outForDeliveryDate: {
-        $gte: today,
-        $lt: tomorrowStart
-      }
-    }).populate('userId');
-
-    for (const order of shippedOrders) {
-      order.status = 'out for delivery';
-      await order.save();
-      console.log(`✅ Order ${order._id} updated to: OUT FOR DELIVERY (7 AM)`);
+    if (updateCount > 0) {
+      console.log(`✅ Cron job completed - ${updateCount} order(s) updated`);
     }
-
-    console.log('[COMPLETE] Cron job @ 07:00 AM completed successfully!');
   } catch (error) {
-    console.error('❌ Error in cron job @ 7 AM:', error);
+    console.error('❌ Error processing order status updates:', error);
   }
+};
+
+// CRON JOB: Run every minute (for testing) - Change to '0 * * * *' for hourly or '0 10 * * *' for 10 AM
+// For production, use: '0 7 * * *' (7 AM) and '0 10 * * *' (10 AM) in separate cron jobs
+const orderStatusCronJob = cron.schedule('* * * * *', processOrderStatusUpdates, {
+  scheduled: true,
+  timezone: process.env.TZ || 'Asia/Kolkata' // India timezone
 });
 
-// Start both cron jobs
 const startCronJobs = () => {
   console.log('═══════════════════════════════════════════');
   console.log('[STARTUP] Initializing cron jobs...');
-  console.log('[JOB-1] 10:00 AM - Update shipped & delivered orders');
-  console.log('[JOB-2] 07:00 AM - Update out for delivery orders');
+  console.log('[JOB] Running every minute (testing mode)');
+  console.log('[TIMEZONE] ' + (process.env.TZ || 'Asia/Kolkata'));
+  console.log('[TASK] Auto-update order statuses based on dates');
   console.log('═══════════════════════════════════════════');
-  // Jobs start automatically on schedule
+  console.log('💡 For production, change cron expression to:');
+  console.log('   - "0 7 * * *" for 7:00 AM');
+  console.log('   - "0 10 * * *" for 10:00 AM');
+  console.log('═══════════════════════════════════════════');
 };
 
-module.exports = { startCronJobs, cronJob10AM, cronJob7AM };
+module.exports = { startCronJobs, orderStatusCronJob };

@@ -108,13 +108,13 @@ const SearchProduct = () => {
   const fetchWishlist = async () => {
     if (!user?._id) return
     try {
-      const response = await fetch(summaryAPI.fetchWishlist.url, {
-        method: summaryAPI.fetchWishlist.method,
+      const response = await fetch(summaryAPI.getWishlist.url, {
+        method: summaryAPI.getWishlist.method,
         credentials: 'include'
       })
       const responseData = await response.json()
       if (responseData.success) {
-        setWishlist(responseData.data.map(item => item.productId._id))
+        setWishlist(responseData.data.map(item => item.productId))
       }
     } catch (error) {
       console.error('Error fetching wishlist:', error)
@@ -126,31 +126,53 @@ const SearchProduct = () => {
   }, [user?._id])
 
   // Handle wishlist add/remove
-  const handleWishlist = async (productId) => {
+  const handleWishlist = async (product) => {
     if (!user?._id) {
       toast.error('Please login to add to wishlist')
       return
     }
     try {
-      const response = await fetch(summaryAPI.addToWishlist.url, {
-        method: summaryAPI.addToWishlist.method,
-        credentials: 'include',
-        headers: {
-          'content-type': 'application/json'
-        },
-        body: JSON.stringify({ productId })
-      })
-      const responseData = await response.json()
-      if (responseData.success) {
-        setWishlist(prev => 
-          prev.includes(productId) 
-            ? prev.filter(id => id !== productId)
-            : [...prev, productId]
-        )
-        toast.success(responseData.message)
+      const isAlreadyInWishlist = wishlist.includes(product._id)
+      
+      if (isAlreadyInWishlist) {
+        // Remove from wishlist
+        const response = await fetch(summaryAPI.removeFromWishlist.url, {
+          method: summaryAPI.removeFromWishlist.method,
+          credentials: 'include',
+          headers: {
+            'content-type': 'application/json'
+          },
+          body: JSON.stringify({ productId: product._id })
+        })
+        const responseData = await response.json()
+        if (responseData.success) {
+          setWishlist(prev => prev.filter(id => id !== product._id))
+          toast.success('Removed from wishlist')
+        }
+      } else {
+        // Add to wishlist with complete product data
+        const response = await fetch(summaryAPI.addToWishlist.url, {
+          method: summaryAPI.addToWishlist.method,
+          credentials: 'include',
+          headers: {
+            'content-type': 'application/json'
+          },
+          body: JSON.stringify({
+            productId: product._id,
+            productName: product.productName,
+            sellingPrice: product.sellingPrice,
+            productImage: product.productImage[0] || product.productImage
+          })
+        })
+        const responseData = await response.json()
+        if (responseData.success) {
+          setWishlist(prev => [...prev, product._id])
+          toast.success('Added to wishlist')
+        }
       }
     } catch (error) {
       toast.error('Error updating wishlist')
+      console.error(error)
     }
   }
 
@@ -415,7 +437,7 @@ const SearchProduct = () => {
                              onClick={(e) => {
                                e.preventDefault()
                                e.stopPropagation()
-                               handleWishlist(product._id)
+                               handleWishlist(product)
                              }}
                              className='absolute top-2 right-2 text-2xl cursor-pointer transition-colors hover:scale-110'
                            >

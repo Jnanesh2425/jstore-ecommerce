@@ -18,14 +18,17 @@ import {
 } from "react-icons/fa";
 
 import { Link, useNavigate } from 'react-router-dom';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import Context from '../context/index.jsx';
 import { toast } from 'react-toastify';
+import summaryAPI from '../common/index.jsx';
+import { setUserDetails } from '../store/userSlice';
 
 const Header = () => {
 
     const user = useSelector(state => state?.user?.user)
     const navigate = useNavigate()
+    const dispatch = useDispatch()
     const context = useContext(Context)
 
     const [showMoreMenu, setShowMoreMenu] = useState(false)
@@ -33,6 +36,28 @@ const Header = () => {
 
     const userMenuTimeoutRef = useRef(null)
     const moreMenuTimeoutRef = useRef(null)
+
+    const handleLogout = async () => {
+        try {
+            const response = await fetch(summaryAPI.logout_user.url, {
+                method: summaryAPI.logout_user.method,
+                credentials: 'include'
+            })
+            const data = await response.json()
+
+            if (data.success) {
+                toast.success('Logged out successfully!')
+                dispatch(setUserDetails(null))
+                setShowUserMenu(false)
+                navigate('/')
+            } else {
+                toast.error(data.message || 'Logout failed')
+            }
+        } catch (error) {
+            toast.error('Error logging out')
+            console.error('Logout error:', error)
+        }
+    }
 
     const handleUserMenuLeave = () => {
         userMenuTimeoutRef.current = setTimeout(() => {
@@ -239,10 +264,7 @@ const Header = () => {
                                 <div className='border-t mt-2 pt-2'>
 
                                     <button
-                                        onClick={() => {
-                                            navigate('/logout')
-                                            setShowUserMenu(false)
-                                        }}
+                                        onClick={handleLogout}
                                         className='w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 text-left'
                                     >
                                         <FaSignOutAlt />

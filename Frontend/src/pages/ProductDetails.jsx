@@ -238,12 +238,12 @@ const ProductDetails = () => {
     setZoomImage(true)
     const { left, top, width, height } = e.target.getBoundingClientRect()
 
-    const x = (e.clientX - left) / width
-    const y = (e.clientY - top) / height
+    const x = ((e.clientX - left) / width) * 100
+    const y = ((e.clientY - top) / height) * 100
 
     setZoomImageCoordinate({
-      x: x * 100,
-      y: y * 100
+      x: x,
+      y: y
     })
   }
 
@@ -255,7 +255,7 @@ const ProductDetails = () => {
       <div className='min-h-[200px] flex flex-col lg:flex-row gap-2'>
         {/*product image*/}
         <div className='h-96 flex flex-col lg:flex-row-reverse gap-2'>
-          <div className='h-[300px] w-[300px] lg:h-96 lg:w-96 bg-slate-200 relative p-2'>
+          <div className='h-[300px] w-[300px] lg:h-96 lg:w-96 bg-slate-200 relative p-2 cursor-zoom-in'>
             <img
               src={activeImage}
               className='h-full w-full object-scale-down mix-blend-multiply'
@@ -273,13 +273,14 @@ const ProductDetails = () => {
             {/*For zooming an img*/}
             {
               zoomImage && (
-                <div className='hidden lg:block absolute min-w-[500px] overflow-hidden min-h-[400px] bg-slate-200 p-1 -right-[510px] top-0'>
+                <div className='hidden lg:block absolute min-w-[500px] overflow-hidden min-h-[400px] bg-slate-200 p-1 -right-[520px] top-0 border border-gray-300 shadow-lg'>
                   <div
-                    className='w-full h-full min-h-[400px] min-w-[500px] mix-blend-multiply scale-150'
+                    className='w-full h-full min-h-[400px] min-w-[500px] mix-blend-multiply scale-[2]'
                     style={{
                       backgroundImage: `url(${activeImage})`,
                       backgroundRepeat: 'no-repeat',
-                      backgroundPosition: `${zoomImageCoordinate.x}% ${zoomImageCoordinate.y}%`
+                      backgroundPosition: `${zoomImageCoordinate.x}% ${zoomImageCoordinate.y}%`,
+                      backgroundSize: 'contain'
                     }}
                   >
                   </div>
