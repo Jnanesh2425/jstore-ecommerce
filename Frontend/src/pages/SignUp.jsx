@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import loginIcons from '../assets/signin.gif'
-import { FaEye, FaEyeSlash } from "react-icons/fa";
+import { FaEye, FaEyeSlash, FaCheck } from "react-icons/fa";
 import { Link, useNavigate } from 'react-router-dom';
 import imageTobase64 from '../helpers/imageTobase64';
 import summaryAPI from '../common/index.jsx';
@@ -12,6 +12,10 @@ const SignUp = () => {
 
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [emailVerified, setEmailVerified] = useState(false)
+  const [otpSent, setOtpSent] = useState(false)
+  const [otp, setOtp] = useState("")
+  const [loading, setLoading] = useState(false)
 
   //to store the email and password
   const [data, setData] = useState({
@@ -47,8 +51,90 @@ const SignUp = () => {
 
   }
 
+  const handleSendOtp = async (e) => {
+    e.preventDefault()
+
+    if (!data.email) {
+      toast.error("Please enter your email")
+      return
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(data.email)) {
+      toast.error("Please enter a valid email")
+      return
+    }
+
+    setLoading(true)
+    try {
+      const response = await fetch(summaryAPI.sendEmailOtp.url, {
+        method: summaryAPI.sendEmailOtp.method,
+        credentials: 'include',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ email: data.email })
+      })
+
+      const result = await response.json()
+
+      if (result.success) {
+        toast.success('OTP sent to your email!')
+        setOtpSent(true)
+      } else {
+        toast.error(result.message || 'Failed to send OTP')
+      }
+    } catch (error) {
+      console.error('Error sending OTP:', error)
+      toast.error('Error sending OTP')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleVerifyOtp = async (e) => {
+    e.preventDefault()
+
+    if (!otp || otp.length !== 6) {
+      toast.error("Please enter a valid 6-digit OTP")
+      return
+    }
+
+    setLoading(true)
+    try {
+      const response = await fetch(summaryAPI.verifyEmailOtp.url, {
+        method: summaryAPI.verifyEmailOtp.method,
+        credentials: 'include',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          email: data.email,
+          otp: otp
+        })
+      })
+
+      const result = await response.json()
+
+      if (result.success) {
+        toast.success('Email verified successfully!')
+        setEmailVerified(true)
+        setOtp("")
+        setOtpSent(false)
+      } else {
+        toast.error(result.message || 'Invalid OTP')
+      }
+    } catch (error) {
+      console.error('Error verifying OTP:', error)
+      toast.error('Error verifying OTP')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
+
+    if (!emailVerified) {
+      toast.error("Please verify your email first")
+      return
+    }
 
     /* connect your frontend sign-up form to your backend signup logic (API). */
     if (data.password !== data.confirmPassword) {
@@ -126,17 +212,55 @@ const SignUp = () => {
             {/* email */}
             <div className='grid'>
               <label>Email : </label>
-              <div className='bg-slate-100 p-2'>
+              <div className='bg-slate-100 p-2 flex items-center justify-between'>
                 <input
                   type='email'
                   placeholder='enter email'
                   name='email'
                   value={data.email}
                   onChange={handleOnChange}
+                  disabled={emailVerified}
                   required
-                  className='w-full h-full outline-none bg-transparent' />
+                  className='flex-1 outline-none bg-transparent disabled:opacity-50' />
+                {emailVerified ? (
+                  <FaCheck className='text-green-600 text-lg' />
+                ) : (
+                  <button
+                    type='button'
+                    onClick={handleSendOtp}
+                    disabled={loading || !data.email}
+                    className='text-green-600 hover:text-green-700 cursor-pointer ml-2 text-sm font-semibold disabled:opacity-50 whitespace-nowrap'
+                  >
+                    {loading ? 'Sending...' : 'Verify'}
+                  </button>
+                )}
               </div>
             </div>
+
+            {/* OTP Input - shows after verify button clicked */}
+            {otpSent && !emailVerified && (
+              <div className='grid'>
+                <label>Enter OTP : </label>
+                <div className='bg-slate-100 p-2 flex gap-2'>
+                  <input
+                    type='text'
+                    placeholder='000000'
+                    value={otp}
+                    onChange={(e) => setOtp(e.target.value.slice(0, 6))}
+                    maxLength='6'
+                    className='flex-1 outline-none bg-transparent text-center tracking-widest'
+                  />
+                  <button
+                    type='button'
+                    onClick={handleVerifyOtp}
+                    disabled={loading || otp.length !== 6}
+                    className='text-green-600 hover:text-green-700 cursor-pointer text-sm font-semibold disabled:opacity-50 whitespace-nowrap'
+                  >
+                    {loading ? 'Verifying...' : 'Verify'}
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* password */}
             <div>
@@ -176,7 +300,7 @@ const SignUp = () => {
                 </div>
               </div>
             </div>
-            <button className='bg-red-600 hover:bg-red-700 text-white px-6 py-2 w-full max-w-[150px] rounded-full hover:scale-110 transition-all mx-auto block mt-2 cursor-pointer '>Sign Up</button>
+            <button className='bg-red-600 hover:bg-red-700 text-white px-6 py-2 w-full max-w-[150px] rounded-full hover:scale-110 transition-all mx-auto block mt-2 cursor-pointer'>Sign Up</button>
           </form>
           <p className='my-3'>Already have account ?<Link to={"/login"} className=' text-blue-600 text-[15px] hover:underline pl-1'>login</Link></p>
         </div>

@@ -4,6 +4,10 @@ const router = express.Router()
 
 const userSignUpController = require('../controller/user/userSignUp.js')
 const userSignInController = require('../controller/user/userSignIn.js')
+const sendEmailOtpController = require('../controller/user/sendEmailOtp.js')
+const verifyEmailOtpController = require('../controller/user/verifyEmailOtp.js')
+const forgotPasswordController = require('../controller/user/forgotPassword.js')
+const resetPasswordController = require('../controller/user/resetPassword.js')
 const authToken = require('../middleware/authToken.js')
 const userDetailsController = require('../controller/user/userDetails.js')
 const userLogout = require('../controller/user/userLogout.js')
@@ -38,6 +42,10 @@ const cancelOrder = require('../controller/payment/cancelOrder.js')
 
 router.post('/signup',userSignUpController) //When a POST request is made to '/signup', the userSignUpController will handle it
 router.post('/signin',userSignInController)
+router.post('/send-email-otp', sendEmailOtpController)
+router.post('/verify-email-otp', verifyEmailOtpController)
+router.post('/forgot-password', forgotPasswordController)
+router.post('/reset-password', resetPasswordController)
 router.get('/user-details',authToken,userDetailsController)
 router.get('/userlogout', userLogout)
 //adminpanel
@@ -74,7 +82,8 @@ router.post('/delete-cart-item', authToken, deleteCartItemController)
 router.get('/search', searchProduct)
 
 //orders
-router.post('/place-order', authToken, placeOrderController)
+// NOTE: Using Razorpay payment flow only - /place-order is deprecated
+// router.post('/place-order', authToken, placeOrderController) // DISABLED - Use Razorpay checkout instead
 router.post('/check-purchase', authToken, checkPurchaseController)
 
 //ratings

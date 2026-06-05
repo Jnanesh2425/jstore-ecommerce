@@ -11,17 +11,10 @@ const sesClient = new SESClient({
   }
 });
 
-// Read and encode logo as base64
-const logoPath = path.join(__dirname, '../logo/logo.png');
-let logoBase64 = '';
-
-try {
-  const logoBuffer = fs.readFileSync(logoPath);
-  logoBase64 = `data:image/png;base64,${logoBuffer.toString('base64')}`;
-  console.log('[EMAIL] Logo loaded successfully');
-} catch (error) {
-  console.log('[EMAIL] Logo not found, emails will proceed without logo');
-}
+// Logo URL - Use a hosted URL instead of base64 (email clients block embedded base64 for security)
+// Change this to your actual logo URL or upload to AWS S3
+const logoURL = process.env.LOGO_URL || 'https://via.placeholder.com/180x180?text=JStore';
+console.log('[EMAIL] Logo URL configured:', logoURL);
 
 // Verify AWS credentials are configured
 if (!process.env.AWS_ACCESS_KEY_ID || !process.env.AWS_SECRET_ACCESS_KEY) {
@@ -71,7 +64,7 @@ const sendOrderConfirmationEmail = async (userEmail, userName, order) => {
                   <!-- HEADER WITH LOGO -->
                   <tr>
                     <td style="background-color: #ffffff; padding: 30px 20px; text-align: center; border-bottom: 3px solid #1a73e8;">
-                      ${logoBase64 ? `<img src="${logoBase64}" alt="Store Logo" style="max-width: 180px; height: auto; margin-bottom: 15px;" />` : ''}
+                      <img src="${logoURL}" alt="Store Logo" style="max-width: 180px; height: auto; margin-bottom: 15px;" />
                       <h1 style="margin: 0; font-size: 32px; color: #1a73e8; font-weight: 700;">Order Confirmed! ✅</h1>
                       <p style="margin: 8px 0 0 0; color: #666; font-size: 16px;">Thank you for your order</p>
                     </td>
@@ -316,7 +309,7 @@ const sendOrderDeliveredEmail = async (userEmail, userName, order) => {
                   <!-- HEADER WITH LOGO -->
                   <tr>
                     <td style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); padding: 30px 20px; text-align: center; border-bottom: 3px solid #28a745;">
-                      ${logoBase64 ? `<img src="${logoBase64}" alt="Store Logo" style="max-width: 180px; height: auto; margin-bottom: 15px; filter: brightness(1.1);" />` : ''}
+                      <img src="${logoURL}" alt="Store Logo" style="max-width: 180px; height: auto; margin-bottom: 15px; filter: brightness(1.1);" />
                       <h1 style="margin: 0; font-size: 32px; color: #ffffff; font-weight: 700;">Order Delivered! 🎉</h1>
                       <p style="margin: 8px 0 0 0; color: #ffffff; font-size: 16px;">Your package has arrived safely</p>
                     </td>
@@ -480,7 +473,129 @@ const sendOrderDeliveredEmail = async (userEmail, userName, order) => {
   }
 };
 
+const sendPasswordResetEmail = async (userEmail, resetCode) => {
+  const htmlBody = `
+    <html>
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Password Reset</title>
+      </head>
+      <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8f9fa;">
+        <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f8f9fa;">
+          <tr>
+            <td align="center" style="padding: 20px 0;">
+              <table width="100%" maxwidth="600" cellpadding="0" cellspacing="0" style="max-width: 600px; background-color: #ffffff; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                
+                <!-- HEADER -->
+                <tr>
+                  <td style="background-color: #ffffff; padding: 30px 20px; text-align: center; border-bottom: 3px solid #d32f2f;">
+                    <h1 style="margin: 0; font-size: 32px; color: #d32f2f; font-weight: 700;">Password Reset Code</h1>
+                  </td>
+                </tr>
+
+                <!-- MESSAGE -->
+                <tr>
+                  <td style="padding: 30px 30px 10px 30px;">
+                    <p style="margin: 0; font-size: 16px; color: #333; line-height: 1.6;">
+                      Hi there,
+                    </p>
+                  </td>
+                </tr>
+
+                <tr>
+                  <td style="padding: 10px 30px 25px 30px;">
+                    <p style="margin: 0; font-size: 15px; color: #666; line-height: 1.6;">
+                      We received a request to reset your password. Use the code below to reset it:
+                    </p>
+                  </td>
+                </tr>
+
+                <!-- RESET CODE -->
+                <tr>
+                  <td style="padding: 0 30px 25px 30px;">
+                    <div style="background-color: #f0f0f0; border-radius: 8px; padding: 25px; text-align: center;">
+                      <h2 style="color: #d32f2f; letter-spacing: 10px; margin: 0; font-size: 40px; font-weight: 700;">
+                        ${resetCode}
+                      </h2>
+                    </div>
+                  </td>
+                </tr>
+
+                <!-- EXPIRY INFO -->
+                <tr>
+                  <td style="padding: 0 30px 25px 30px;">
+                    <div style="background-color: #fff3cd; padding: 15px; border-radius: 4px; border-left: 4px solid #ffc107;">
+                      <p style="margin: 0; color: #856404; font-size: 14px; line-height: 1.6;">
+                        <strong>⏰ Important:</strong> This code will expire in <strong>5 minutes</strong>. If you didn't request a password reset, please ignore this email and your password will remain unchanged.
+                      </p>
+                    </div>
+                  </td>
+                </tr>
+
+                <!-- SAFETY NOTICE -->
+                <tr>
+                  <td style="padding: 0 30px 30px 30px;">
+                    <div style="background-color: #e8f5e9; padding: 15px; border-radius: 4px; border-left: 4px solid #4caf50;">
+                      <p style="margin: 0; color: #2e7d32; font-size: 13px; line-height: 1.6;">
+                        🔒 <strong>Security Notice:</strong> Never share this code with anyone. Our team will never ask for this code.
+                      </p>
+                    </div>
+                  </td>
+                </tr>
+
+                <!-- FOOTER -->
+                <tr>
+                  <td style="background-color: #f5f5f5; padding: 25px 30px; border-top: 1px solid #ddd; text-align: center;">
+                    <p style="margin: 0 0 10px 0; font-size: 13px; color: #888; line-height: 1.6;">
+                      If you need further assistance, please contact our support team.
+                    </p>
+                    <p style="margin: 12px 0 0 0; font-size: 12px; color: #aaa;">
+                      &copy; 2026 JStore. All rights reserved.
+                    </p>
+                  </td>
+                </tr>
+
+              </table>
+            </td>
+          </tr>
+        </table>
+      </body>
+    </html>
+  `;
+
+  try {
+    const params = {
+      Source: process.env.AWS_SES_FROM_EMAIL,
+      Destination: {
+        ToAddresses: [userEmail]
+      },
+      Message: {
+        Subject: {
+          Data: 'Password Reset Code - JStore'
+        },
+        Body: {
+          Html: {
+            Data: htmlBody
+          }
+        }
+      }
+    };
+
+    const command = new SendEmailCommand(params);
+    await sesClient.send(command);
+    console.log(`[SUCCESS] Password reset email sent to ${userEmail}`);
+    return true;
+  } catch (error) {
+    console.error('[ERROR] Failed to send password reset email:');
+    console.error('  To:', userEmail);
+    console.error('  Error:', error.message);
+    return false;
+  }
+};
+
 module.exports = { 
   sendOrderConfirmationEmail, 
-  sendOrderDeliveredEmail 
+  sendOrderDeliveredEmail,
+  sendPasswordResetEmail
 };

@@ -114,6 +114,58 @@ const Cart = () => {
     }
   }
 
+  const handleBuyNow = async (item) => {
+    try {
+      // Fetch user's default address
+      const addressResponse = await fetch(summaryAPI.getAddresses.url, {
+        method: summaryAPI.getAddresses.method,
+        credentials: 'include',
+        headers: { 'content-type': 'application/json' }
+      })
+      const addressData = await addressResponse.json()
+      const defaultAddress = addressData.data?.find(a => a.isDefault) || addressData.data?.[0] || null
+
+      // Create direct order for this item
+      const response = await fetch(summaryAPI.directBuyRazorpayOrder.url, {
+        method: summaryAPI.directBuyRazorpayOrder.method,
+        credentials: 'include',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          productId: item.ProductId,
+          quantity: item.quantity,
+          deliveryType: deliveryType,
+          address: defaultAddress ? {
+            name: defaultAddress.name,
+            address: defaultAddress.address,
+            city: defaultAddress.city,
+            state: defaultAddress.state,
+            pincode: defaultAddress.pincode,
+            mobile: defaultAddress.mobile
+          } : null
+        })
+      })
+
+      const result = await response.json()
+
+      if (result.success) {
+        navigate('/payment', {
+          state: {
+            orderId: result.data.orderId,
+            totalAmount: result.data.amount,
+            razorpayOrderId: result.data.razorpayOrderId,
+            razorpayKey: result.data.key,
+            checkoutType: 'direct'
+          }
+        })
+      } else {
+        toast.error(result.message || 'Failed to start checkout')
+      }
+    } catch (error) {
+      console.error('Buy Now error:', error)
+      toast.error('Error starting checkout')
+    }
+  }
+
   // Calculate totals
   const totalOriginalPrice = data.reduce((acc, item) => {
     return acc + (item?.productDetails?.price || 0) * (item?.quantity || 0)
@@ -336,7 +388,7 @@ const Cart = () => {
                         </button>
                       </div>
                       <button
-                        onClick={(e) => { e.stopPropagation(); navigate(productDetailsPath) }}
+                        onClick={(e) => { e.stopPropagation(); handleBuyNow(item) }}
                         className='text-sm text-blue-600 hover:text-blue-800 font-medium hover:underline cursor-pointer'
                       >
                         Buy this now

@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { FaBell, FaLock, FaEye, FaToggleOn, FaToggleOff } from 'react-icons/fa';
 import AccountLayout from '../components/AccountLayout';
 
 const Settings = () => {
+    const navigate = useNavigate();
     const [settings, setSettings] = useState({
         emailNotifications: true,
         smsNotifications: false,
@@ -28,6 +30,25 @@ const Settings = () => {
     return (
         <AccountLayout>
             <div className='p-8'>
+                {/* Breadcrumb */}
+                <div className='text-sm text-gray-600 mb-6 flex items-center gap-3'>
+                    <button 
+                        onClick={() => navigate('/')}
+                        className='hover:text-blue-600 cursor-pointer font-medium'
+                    >
+                        Home
+                    </button>
+                    <span className='text-gray-400'>›</span>
+                    <button 
+                        onClick={() => navigate('/profile')}
+                        className='hover:text-blue-600 cursor-pointer font-medium'
+                    >
+                        My Account
+                    </button>
+                    <span className='text-gray-400'>›</span>
+                    <span className='text-gray-600 font-medium'>Settings</span>
+                </div>
+
                 <h1 className='text-2xl font-bold mb-6'>Settings</h1>
 
                 {/* Notifications */}

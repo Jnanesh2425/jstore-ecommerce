@@ -141,6 +141,22 @@ const summaryAPI = {
         url: `${backendDomain}/api/cancel-order`,
         method: "post"
     },
+    sendEmailOtp: {
+        url: `${backendDomain}/api/send-email-otp`,
+        method: "post"
+    },
+    verifyEmailOtp: {
+        url: `${backendDomain}/api/verify-email-otp`,
+        method: "post"
+    },
+    forgotPassword: {
+        url: `${backendDomain}/api/forgot-password`,
+        method: "post"
+    },
+    resetPassword: {
+        url: `${backendDomain}/api/reset-password`,
+        method: "post"
+    },
 }
 
 export default summaryAPI;

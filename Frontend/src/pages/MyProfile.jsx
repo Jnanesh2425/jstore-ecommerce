@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 import summaryAPI from '../common';
 import { toast } from 'react-toastify';
 import { FaUser, FaEnvelope, FaPhone, FaCamera } from 'react-icons/fa';
@@ -7,6 +8,7 @@ import AccountLayout from '../components/AccountLayout';
 import { setUserDetails } from '../store/userSlice';
 
 const MyProfile = () => {
+    const navigate = useNavigate();
     const user = useSelector(state => state?.user?.user);
     const dispatch = useDispatch();
     const [isEditing, setIsEditing] = useState(false);
@@ -75,6 +77,20 @@ const MyProfile = () => {
     return (
         <AccountLayout>
             <div className='p-8'>
+                {/* Breadcrumb */}
+                <div className='text-sm text-gray-600 mb-6 flex items-center gap-3'>
+                    <button 
+                        onClick={() => navigate('/')}
+                        className='hover:text-blue-600 cursor-pointer font-medium'
+                    >
+                        Home
+                    </button>
+                    <span className='text-gray-400'>›</span>
+                    <span className='text-gray-600 font-medium'>My Account</span>
+                    <span className='text-gray-400'>›</span>
+                    <span className='text-gray-600 font-medium'>My Profile</span>
+                </div>
+
                 <div className='grid grid-cols-3 gap-6'>
                     {/* Profile Form - Left Side */}
                     <div className='col-span-2 bg-white rounded-lg shadow p-8'>

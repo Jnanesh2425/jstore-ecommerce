@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import summaryAPI from '../common';
 import displayINRCurrency from '../helpers/displayCurrency';
 import { toast } from 'react-toastify';
 import { FaBox, FaSearch, FaStar } from 'react-icons/fa';
 
 const MyOrders = () => {
+  const navigate = useNavigate();
   const [orders, setOrders] = useState([]);
   const [filteredOrders, setFilteredOrders] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -163,10 +164,22 @@ const MyOrders = () => {
     <div className='min-h-screen bg-gray-50 py-8'>
       <div className='container mx-auto px-4'>
         {/* Breadcrumb */}
-        <div className='text-sm text-gray-600 mb-6'>
-          <span>Home </span>
-          <span>› My Account </span>
-          <span>› My Orders</span>
+        <div className='text-sm text-gray-600 mb-6 flex items-center gap-3'>
+          <button 
+            onClick={() => navigate('/')}
+            className='hover:text-blue-600 cursor-pointer font-medium'
+          >
+            Home
+          </button>
+          <span className='text-gray-400'>›</span>
+          <button 
+            onClick={() => navigate('/profile')}
+            className='hover:text-blue-600 cursor-pointer font-medium'
+          >
+            My Account
+          </button>
+          <span className='text-gray-400'>›</span>
+          <span className='text-gray-600 font-medium'>My Orders</span>
         </div>
 
         {/* Search Bar */}

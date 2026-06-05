@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import summaryAPI from '../common';
 import displayINRCurrency from '../helpers/displayCurrency';
 import { toast } from 'react-toastify';
@@ -8,6 +8,7 @@ import AccountLayout from '../components/AccountLayout';
 import Context from '../context';
 
 const Wishlist = () => {
+    const navigate = useNavigate();
     const [wishlist, setWishlist] = useState([]);
     const [loading, setLoading] = useState(true);
     const [removingId, setRemovingId] = useState(null);
@@ -153,6 +154,25 @@ const Wishlist = () => {
             </div>
 
             <div className='p-8'>
+                {/* Breadcrumb */}
+                <div className='text-sm text-gray-600 mb-6 flex items-center gap-3'>
+                    <button 
+                        onClick={() => navigate('/')}
+                        className='hover:text-blue-600 cursor-pointer font-medium'
+                    >
+                        Home
+                    </button>
+                    <span className='text-gray-400'>›</span>
+                    <button 
+                        onClick={() => navigate('/profile')}
+                        className='hover:text-blue-600 cursor-pointer font-medium'
+                    >
+                        My Account
+                    </button>
+                    <span className='text-gray-400'>›</span>
+                    <span className='text-gray-600 font-medium'>Wishlist</span>
+                </div>
+
                 <div className='mb-6'>
                     <h1 className='text-3xl font-bold text-gray-800'>My Wishlist</h1>
                     <p className='text-gray-500 mt-2'>

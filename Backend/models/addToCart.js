@@ -21,6 +21,6 @@ const addToCartSchema = new mongoose.Schema({
 const db = mongoose.connection.useDb("ecom_db");
 
 // Create model under ecom_db
-const addToCartModel = db.model("addToCart", addToCartSchema  );
+const addToCartModel = db.model("addToCart", addToCartSchema);
 
 module.exports = addToCartModel;

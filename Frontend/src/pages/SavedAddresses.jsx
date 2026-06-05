@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import summaryAPI from '../common';
 import { toast } from 'react-toastify';
 import { FaMapMarkerAlt, FaEdit, FaTrash, FaPlus, FaCheck, FaHome, FaBriefcase, FaCircle } from 'react-icons/fa';
 import AccountLayout from '../components/AccountLayout';
 
 const SavedAddresses = () => {
+    const navigate = useNavigate();
     const [addresses, setAddresses] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showForm, setShowForm] = useState(false);
@@ -112,6 +114,25 @@ const SavedAddresses = () => {
     return (
         <AccountLayout>
             <div className='p-8'>
+                {/* Breadcrumb */}
+                <div className='text-sm text-gray-600 mb-6 flex items-center gap-3'>
+                    <button 
+                        onClick={() => navigate('/')}
+                        className='hover:text-blue-600 cursor-pointer font-medium'
+                    >
+                        Home
+                    </button>
+                    <span className='text-gray-400'>›</span>
+                    <button 
+                        onClick={() => navigate('/profile')}
+                        className='hover:text-blue-600 cursor-pointer font-medium'
+                    >
+                        My Account
+                    </button>
+                    <span className='text-gray-400'>›</span>
+                    <span className='text-gray-600 font-medium'>Saved Addresses</span>
+                </div>
+
                 <div className='flex justify-between items-center mb-6'>
                     <h1 className='text-2xl font-bold'>Saved Addresses</h1>
                     {!showForm && (

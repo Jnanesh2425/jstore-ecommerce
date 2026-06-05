@@ -34,11 +34,19 @@ const createDirectOrder = async (req, res) => {
         const totalDiscount = (product.price - product.sellingPrice) * quantity;
         const totalAmount = totalSellingPrice + chargesAmount;
 
-        const pendingOrders = await orderModel
-            .find({ userId, paymentStatus: 'pending', status: 'pending' })
-            .sort({ createdAt: -1 });
+        // 🗑️ DELETE ALL OLD PENDING ORDERS first - avoid any duplicates
+        const deletedCount = await orderModel.deleteMany({
+            userId,
+            paymentStatus: 'pending',
+            status: 'pending'
+        });
+        
+        if (deletedCount.deletedCount > 0) {
+            console.log(`🗑️ Cleaned up ${deletedCount.deletedCount} old pending orders before creating new one`);
+        }
 
-        let order = pendingOrders[0] || new orderModel({ userId });
+        // Create fresh pending order (no reusing old ones)
+        const order = new orderModel({ userId });
 
         order.products = [
             {
@@ -62,15 +70,6 @@ const createDirectOrder = async (req, res) => {
         order.deliveredDate = new Date();
 
         await order.save();
-
-        if (pendingOrders.length > 1) {
-            await orderModel.deleteMany({
-                userId,
-                paymentStatus: 'pending',
-                status: 'pending',
-                _id: { $ne: order._id }
-            });
-        }
 
         const razorpayOrder = await razorpay.orders.create({
             amount: Math.round(totalAmount * 100),

@@ -65,13 +65,21 @@ const createRazorpayOrder = async (req, res) => {
         // Add handling charges to total
         totalAmount += chargesAmount;
 
-        // Reuse the latest pending order to avoid duplicate rows from repeated clicks
-        const pendingOrders = await orderModel
-            .find({ userId, paymentStatus: 'pending', status: 'pending' })
-            .sort({ createdAt: -1 });
+        // 🗑️ DELETE ALL OLD PENDING ORDERS first - avoid any duplicates
+        const deletedCount = await orderModel.deleteMany({
+            userId,
+            paymentStatus: 'pending',
+            status: 'pending'
+        });
+        
+        if (deletedCount.deletedCount > 0) {
+            console.log(`🗑️ Cleaned up ${deletedCount.deletedCount} old pending orders before creating new one`);
+        }
 
-        let order = pendingOrders[0] || new orderModel({ userId });
+        // Create fresh pending order (no reusing old ones)
+        const order = new orderModel({ userId });
 
+        // Update order with products and details
         order.products = orderProducts;
         order.totalAmount = totalAmount;
         order.totalDiscount = totalDiscount;
@@ -85,15 +93,6 @@ const createRazorpayOrder = async (req, res) => {
         order.deliveredDate = new Date();
 
         await order.save();
-
-        if (pendingOrders.length > 1) {
-            await orderModel.deleteMany({
-                userId,
-                paymentStatus: 'pending',
-                status: 'pending',
-                _id: { $ne: order._id }
-            });
-        }
 
         // Create Razorpay order
         const razorpayOrder = await razorpay.orders.create({

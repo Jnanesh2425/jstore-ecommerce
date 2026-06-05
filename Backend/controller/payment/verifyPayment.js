@@ -59,6 +59,15 @@ const verifyPayment = async (req, res) => {
         // Clear cart after successful payment
         await addToCartModel.deleteMany({ userId });
 
+        // 🗑️ DELETE ALL OTHER PENDING ORDERS - Keep only the confirmed one
+        await orderModel.deleteMany({
+            userId,
+            paymentStatus: 'pending',
+            status: 'pending',
+            _id: { $ne: orderId }  // Don't delete the order we just confirmed
+        });
+        console.log(`🗑️ Deleted old pending orders after payment confirmation`);
+
         // Send order confirmation email
         if (order && order.userId?.email) {
             await sendOrderConfirmationEmail(
