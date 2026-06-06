@@ -104,7 +104,7 @@ pipeline {
                 sh '''
                 docker run -d \
                 --name backend-container \
-                -p 8080:8080 \
+                -p 5000:8080 \
                 $BACKEND_IMAGE
                 '''
             }
