@@ -44,7 +44,7 @@ async function userSignInController(req, res) {
 
         const tokenOptions = {
             httpOnly: true,
-            secure: true,
+            secure: false,
         };
 
         // only one response is sent with cookie and message
