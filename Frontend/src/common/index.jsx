@@ -1,4 +1,4 @@
-const backendDomain = import.meta.env.VITE_API_URL
+const backendDomain = "http://65.1.90.48:5000"
 
 const summaryAPI = {
     signUp: {

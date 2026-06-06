@@ -103,6 +103,7 @@ pipeline {
 
                 sh '''
                 docker run -d \
+                --env-file /home/ubuntu/env/backend.env \
                 --name backend-container \
                 -p 5000:8080 \
                 $BACKEND_IMAGE
